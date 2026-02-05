@@ -5,5 +5,6 @@
 **/*.out
 **/*.fdb_latexmk
 **/*.gz
+**/*.toc
 
 **/.DS_Store
