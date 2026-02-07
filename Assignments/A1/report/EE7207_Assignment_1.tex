@@ -94,32 +94,157 @@ The datasets are provided as static files, namely \textit{data\_train.mat},
 manual partitioning of training and testing sets is not required.
 
 \textbf{Data Information:} 
-
-{\centering
+\begin{table}[H] 
+    \centering
+    \caption{Sample Sets} 
     \begin{tabular}{lcc}
-            \toprule
-            \textit{Parameter} & \textit{Training Data}& \textit{Testing Data}  \\
-            \midrule
-            Number of Samples ($n$) & 301 & 50 \\
-            Number of Features ($m$) & 33 & 33 \\
-            Distribution (IQR) & &\\
-            Categories & 2 & 2 \\
-            \bottomrule
-    \end{tabular} \par}
-\subsubsection{Preprocessing}
+        \toprule
+        \textit{Parameter} & \textit{Training Data}& \textit{Testing Data}  \\
+        \midrule
+        Number of Samples ($n$) & 301 & 50 \\
+        Number of Features ($m$) & 33 & 33 \\
+        Categories & 2 & 2 \\
+        Missing Value & 0 & 0 \\ 
+        Outlier Ratio (IQR)& 49.83\% & 54.00\%\\
+        \bottomrule
+    \end{tabular}
+\end{table}
+    
+\begin{table}[H]
+    \centering
+    \caption{Label Set}
+    \begin{tabular}{lc}
+        \toprule
+        \textit{Parameter} & \textit{Training Label} \\
+        \midrule
+        Number of Samples ($n$) & 301 \\
+        Categories & \{-1, 1\}\\
+        Distribution & [106, 195]\\
+        Missing Value & 0\\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+I tried to seek for outliers with IQR metric and considered 
+the sample which has outlier feature element as outlier sample to 
+compute ratio. According to the data analysis, the outlier of sample set 
+too large to be normal. Therefore, I plot boxplot to visualize 
+the real distributions of training data in each feature.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{../fig/boxplot_features.png}
+    \caption{Boxplot of Data\_train}
+\end{figure}
+
+According to figure, the main outliers come from several features. The 
+distribution of data, like mean value and variation standardized and the 
+range of value have normalized as well. There is no need to normalizztion 
+and standarlization. 
+
+Generally, the high dimension leads to extreme complexity in feature space.
+It is the \textbf{Curse of Dimensionality}. Since the input layer need to 
+transmit sample to hidden layer, the input layer should have 33 neurons.
 
 \subsection{Hidden Layer}
+The hidden layer is the computational core of the RBF network, responsible 
+for mapping the input data into a new feature space based on the neurons in 
+hidden layer. The RBF hidden layer utilizes radial basis functions to 
+capture local responses. The output of the j-th hidden neuron, $\phi_j(\mathbf{x})$
+is determined by the distance between the input vector $\mathbf{x}$ and a 
+predefined center $\mathbf{c}_j$:
+\begin{equation} 
+    \phi_j(\mathbf{x}) = \exp \left( -\frac{|\mathbf{x} - \mathbf{c}_j|^2}{2\sigma_j^2} \right) 
+\end{equation}
 
-\subsubsection{Kmeans}
+where $|\cdot|$ denotes the Euclidean norm, and $\sigma_j$ represents the Gaussian 
+width (spread) of the j-th neuron. This local mapping ensures that only inputs near 
+the center $\mathbf{c}_j$ produce a significant activation.
 
-\subsubsection{SOM}
+\subsubsection{Centers Selection}
+The selection of centers $\mathbf{c}_j$ is the most critical step in designing the 
+hidden layer, as they serve as the "prototypes" that define the localized receptive 
+fields within the input space. Given the 33-dimensional complexity, a robust and 
+systematic selection strategy is employed.
+
+In this implementation, the K-means clustering algorithm is utilized as the primary 
+method to partition the feature space. To determine the optimal number of hidden 
+neurons K, the Elbow Method is performed by plotting the Within-Cluster Sum of Squares 
+(WCSS) against a range of cluster counts. The "elbow" point of the curve is identified 
+as the optimal balance between model complexity and error reduction, providing a 
+quantitative basis for the hidden layer's scale.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{../fig/elbow_k_select.png}
+    \caption{Cluster Number \& WCSS}
+\end{figure}
+
+Since the elbow occours at $k=6$ in the figure, I decide to use 6 hidden neuron to 
+develop hidden layer.
+
+To further validate the reliability of these centers in the presence of high-dimensional 
+noise, a Self-Organizing Map (SOM) is used for auxiliary verification. While K-means 
+efficiently minimizes local variance, the SOM provides a topological mapping that 
+ensures the centers are not merely biased by dense clusters but also adequately cover t
+he "outlier-heavy" boundaries identified in our data analysis. This dual-verification 
+approach ensures that the prototype centers $\mathbf{c}_j$ maintain a representative 
+coverage of the manifold.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{../fig/som_u_matrix_kmeans_centroids.png}
+    \caption{Centroids on U\_matrix}
+\end{figure}
+
+The U\_matrix map reflected the $30 \times 30$ neurons' distances, the color darker, 
+the distances of neuron to neighbors closer, meaning more possible to belongs to 
+same cluster. Since the centroids computed by Kmeans clustering fall into the blue "valley",
+the selection of 6 neurons in hidden layer roughly feasible.
+\subsubsection{Gaussian Width}
+The Gaussian width $\sigma$ determines the receptive field of each hidden neuron. 
+Setting an appropriate $\sigma$ is a balancing act between sensitivity and generalization:
+\begin{itemize} 
+    \item \textbf{Addressing Dimensionality:} In a 33-dimensional space, the Euclidean 
+    distance between points tends to be large and sparse. If $\sigma$ is too small, the 
+    receptive fields will not overlap, causing the network to lose its interpolation 
+    capability (the "dead neuron" problem). 
+    \item \textbf{Robustness to Outliers:} Conversely, an excessively large $\sigma$ would 
+    over-smooth the decision boundary, potentially blurring the distinction between the categories, 
+    especially given the imbalanced distribution ([106, 195]). 
+\end{itemize}
+
+A common heuristic is used to set a global width: 
+\begin{equation}
+    \sigma=\frac{d_{max}}{\sqrt{2K}}
+\end{equation}
+
+where $d_{max}$is the maximum distance between chosen centers and K is the number of hidden 
+units. This ensures that the hidden layer provides a continuous and smooth mapping 
+across the entire input manifold.
+
+In this experiment, the $\sigma$ I computed is 2.4604.
+
+\subsubsection{Improvement}
 
 \subsection{Output Layer}
 
 \section{Results Analysis}
+\subsection{Baseline}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{../fig/coverage_check_pca.png}
+    \caption{Coverage of Centroids}
+\end{figure}
 
-\section{Check \& Improvement}
-
+\subsection{After Backpropogation}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{../fig/training_loss_curve.png}
+    \caption{Training Loss}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{../fig/final_centres_backprop.png}
+    \caption{Center Coverage After Optimization}
+\end{figure}
 \section{Conclusion}
 
 \end{document}
