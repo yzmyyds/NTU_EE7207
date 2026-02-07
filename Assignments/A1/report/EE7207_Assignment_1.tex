@@ -18,6 +18,7 @@
 \usepackage{indentfirst}
 \usepackage{fancyhdr}
 \usepackage{xcolor}
+\usepackage{listings}
 
 \pagestyle{fancy}
 \fancyhf{}
@@ -72,7 +73,9 @@ hidden layer, and output layer.
 
 The key obstacle during the development is 
 the selection of parameters, like Gaussian width ($\sigma$) 
-and hidden layer neuron number.  
+and hidden layer neuron number. I used different methods to deal 
+with these difficulties, such as SOM, Kmeans, and nonlinear 
+optimization apart from basic process.
 
 Briefly, I divided my design into two parts: (1) basic method to
 develop basic RBF (2) improve parameters with backpropogation.
@@ -81,8 +84,28 @@ The final result reflect positive improvement.
 \section{RBF Neural Network Frame}
 
 \subsection{Input Layer}
+The input layer of RBF is different from normal neural network, 
+it just transmit the training data vector $\mathbf{x}=[x_1, x_2, 
+..., x_n]^{T}$ to the hidden layer. In this stage, no mathematical 
+transformations or learning processes occur.
 \subsubsection{Data Analysis}
+The datasets are provided as static files, namely \textit{data\_train.mat}, 
+\textit{data\_test.mat} and \textit{label\_train.mat}; therefore, 
+manual partitioning of training and testing sets is not required.
 
+\textbf{Data Information:} 
+
+{\centering
+    \begin{tabular}{lcc}
+            \toprule
+            \textit{Parameter} & \textit{Training Data}& \textit{Testing Data}  \\
+            \midrule
+            Number of Samples ($n$) & 301 & 50 \\
+            Number of Features ($m$) & 33 & 33 \\
+            Distribution (IQR) & &\\
+            Categories & 2 & 2 \\
+            \bottomrule
+    \end{tabular} \par}
 \subsubsection{Preprocessing}
 
 \subsection{Hidden Layer}
