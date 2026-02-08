@@ -326,18 +326,20 @@ For the backpropogation, I use \textit{torch.nn} and set learning rate = 0.001, 
 To evaluate the RBF\_nn roughly and statistically, I predict the training label to get metrics, comparing with given label. The results of baseline and optimization are shown in table.
 \begin{table}[H]
     \centering
+    \caption{Metrics of Model}
     \begin{tabular}{lcc}
         \toprule
-        \textit{Metric}&\textit{Base}&\textit\\
+        \textit{Metric}&\textit{Base}&\textit{Optimized}\\
         \midrule
-        Accuracy& 0.920\\
-        Precision &0.907\\
-        Recall &0.927\\
-        F1 Score& 0.915\\
-        Poor coverage number& 36/301\\
+        Accuracy& 0.920&0.983\\
+        Precision &0.907&0.985\\
+        Recall &0.927&0.979\\
+        F1 Score& 0.915&0.982\\
+        Poor coverage number& 36/301&0/301\\
         \bottomrule
     \end{tabular}
 \end{table}
-\section{Conclusion}
+
+By comparing the metrics and coverage visualizations, it is evident that non-linear optimization significantly enhances the model's fit to the training data and refines the spatial distribution of hidden neurons. However, in the absence of ground-truth testing labels, it remains inconclusive whether this performance gain represents a genuine improvement in predictive power or an artifact of over-fitting. The results suggest that while the network has successfully minimized the empirical risk on the training manifold, its generalization capability requires further cross-validation or regularization audits.
 
 \end{document}
